@@ -1,0 +1,3 @@
+[submodule "plugins/cloudify-kubernetes-plugin"]
+	path = plugins/cloudify-kubernetes-plugin
+	url = https://github.com/kim135797531/cloudify-kubernetes-plugin
