@@ -1,0 +1,299 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  Based on this example: https://github.com/kubernetes/examples/blob/master/mysql-wordpress-pd/README.md.
+
+imports:
+  - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/4.1/resources/rest-service/cloudify/types/types.yaml
+  # TODO: Changed to use local plugin file, by Dongmin Kim
+  # - https://raw.githubusercontent.com/cloudify-incubator/cloudify-kubernetes-plugin/1.2.1/plugin.yaml
+  - plugins/cloudify-kubernetes-plugin/plugin.yaml
+  - http://cloudify.co/spec/diamond-plugin/1.3.6/plugin.yaml
+
+inputs:
+
+  kubernetes_federation_configuration:
+    default:
+      apiVersion: v1
+        clusters:
+        - cluster:
+            certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwbVpXeHMKYjNkemFHbHdNQjRYRFRFM01UQXdPVEV5TXpnME9Wb1hEVEkzTVRBd056RXlNemcwT1Zvd0ZURVRNQkVHQTFVRQpBeE1LWm1Wc2JHOTNjMmhwY0RDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBS0JYClJnbXFnb0lsclRCaVJNNEt3eFYyN3hUcGFFc0VGdG1YT0g0ZWNMZmRjd0VmMkl3UGVWcFJiY2VnT0VXNWhsNGQKNW1EZkFYL0hPckQ1ZE5rTXRrLzJUSzZUZ3ZiZzN6WGM5K08yZkc4OTVTbXpGd0crN0I2YW1IS3hvUzA5WDhiUwpaNzVyTVlzZW1ud3FWa0RYbWxaMFhLL1g2Yy8zclVWYmpZL1UyeFNtZFN6ZFJPc0ZFKzJmeXRsdHZUdi95RWZWCnJlcmhWUWJQdCt6YWdKbFN3aW9NS21nSWVYVkpLdGI5YmlRYUNSQzU3OXJYTVpZc3lvYU9VZ3FWcmxKMnB6WFUKVUZIRDdZM3IrRW15bVZJb1o4cXVTaWNPWXRCaytlTmVkd1Fsd1kvV2hIQTlXOXdrMTJxbHJWeTMxUFFIcStOagp1UHVSUjB2ZzNFUW0xVVhZV0MwQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFKSXNjOCtiOUVIaVVTL2xvQTVHQnltNmtZZXoKT0R1NjZDbW11V05ETnNUMldnWFl1dW0yS3BUa3ZubjdpZUJ0eHlreGV0NUg4KzI4SzBNdGRSZUVSLzlFd2VaWgpiRkhEZUt4c1BhTjFraHI2amVNbCt3WkJENzJCb1VXczdIZk5wN0tWaXhJdE5hekVXUnVlSktJck9seXhPSlhVClZqa3RtYnd5TXdvZS82ZTdKYWZ0YnBpUW1MMUJqU1BLUXhjckJiLzd6ZkRubVlFbG15U2VRNkViOGtYb0w5MTcKREsvWnFkK3pSUEU4ZmVCM2pTTS8rbGdxa3VUVUJHNHhTTFk0R1UwcWJHRDRUTHBPeEQ4QjREQ3pLNlQvTlVoKwpLc1BvTEZIeWpFNjd2YndXNlZxak4zZzltcmExTXZleUZ2a3NZLzhobEhFOWl6SUQ3UWtlL3J3NklVRT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+            server: https://192.168.0.111:32676
+          name: fellowship
+        contexts:
+        - context:
+            cluster: fellowship
+            user: fellowship
+          name: fellowship
+        current-context: fellowship
+        kind: Config
+        preferences: {}
+        users:
+        - name: fellowship
+          user:
+            as-user-extra: {}
+            client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN6akNDQWJhZ0F3SUJBZ0lJQ3hHK1dSdG1oQXd3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS1ptVnNiRzkzYzJocGNEQWVGdzB4TnpFd01Ea3hNak00TkRsYUZ3MHhPREV3TURreE1qTTROVEJhTUJBeApEakFNQmdOVkJBTVRCV0ZrYldsdU1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBCnZ4bFl0T3Z0dm9HQUsxYk9QNzBmeG9zMW1IVS85UkpaZTl5RWt3bktNT1BBQ0QzZXU3c2NQLzNVdDBLNE9iMjcKaUhTa1MzUHRac0JDNS95MmwxSDlDd1hhRjRYcnh3Y2M4RWZPZmJVQzlyV2hoL2NJNUhRSms3ck5meHhCN2QrawpLVnJJQzJrWGE4N0NRVWVoZlkvSWM0TUpFckQyZXBtOCtpUzNIZ0k1WUlYK3lXKzV3aXJ2QlJuZnFqb29tVjl1Clh0SVU5YVdYTXd6T2djU1Vnelk2OC96QTg0NWFaRUhlTWJCYk43U0tCMlhRWXBQUzdSVmhWaEpXUTRLdFlyUDUKRWNhakR6N3Z3VVJ0b2pXY2YwQjQrMXhMMlVYdzl6UHJid3ZFM0MrdEZKQnhGSlFkV2NnS011L1NBWXIxdjdMaAppbmRvTGQ1Z095K3RHSjdhNVVCQU13SURBUUFCb3ljd0pUQU9CZ05WSFE4QkFmOEVCQU1DQmFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0l3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUkvL1pySGFoaWlvc3RZZ21MQ2gKblMxMDhLZUo2MjNlOGVLSXhueU9TVUVSOEhwYlNSbXNNS2loMVRRY05YWnZMVlpIOHM0WXhWcmp5cTRCaG5vbApOZlpKRnVlTzM1bzVHNzZMcnlXclQvTE5mQThMWG5FOXVTaFlOOHFDV04xa01Lb0xhRW9ZdUpYWUdmQnJkcHYzCkFkc3BRR1JmTEluN0lsNG50TWZRUjBVbFhNNmJ5V1pnRHUzK3B6WUJTbXRYWkgvaldIK3BIQmYzdnZocm9xYjQKRXR1TEJIaEFuSlVJbjExSTdLSGZVR0xYYk85Q3JIZW40c29tR1FvZTZiZzU3aU1RY3JPblptVnB1UldZb0sxbwowN3lWdUtYQ0pYSk9yZklmV3RqM1E2OUJlOGpRZERzOXlUN2YwRjRuSE80S1B5UVpOVHdTMzJTOTBHNXc5VU9jCmRwMD0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+            client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBdnhsWXRPdnR2b0dBSzFiT1A3MGZ4b3MxbUhVLzlSSlplOXlFa3duS01PUEFDRDNlCnU3c2NQLzNVdDBLNE9iMjdpSFNrUzNQdFpzQkM1L3kybDFIOUN3WGFGNFhyeHdjYzhFZk9mYlVDOXJXaGgvY0kKNUhRSms3ck5meHhCN2Qra0tWcklDMmtYYTg3Q1FVZWhmWS9JYzRNSkVyRDJlcG04K2lTM0hnSTVZSVgreVcrNQp3aXJ2QlJuZnFqb29tVjl1WHRJVTlhV1hNd3pPZ2NTVWd6WTY4L3pBODQ1YVpFSGVNYkJiTjdTS0IyWFFZcFBTCjdSVmhWaEpXUTRLdFlyUDVFY2FqRHo3dndVUnRvaldjZjBCNCsxeEwyVVh3OXpQcmJ3dkUzQyt0RkpCeEZKUWQKV2NnS011L1NBWXIxdjdMaGluZG9MZDVnT3krdEdKN2E1VUJBTXdJREFRQUJBb0lCQUNzcCszcHFLL295NEJOcAorUTQybHIzTzVkMDQ1cWhoYTZycGhWeDlBcG1HWi9LMG51SENnc0FGZ28yZVdXUlpjY21CcHphUHlkakNwcG9sCjM4eFFMWnJXeUlzMXFhcjc5VkprdGNSNUpXRTZaM0VCb0pXUmpEUTlKbnVHazNHNmFTY2FKVU5HaW83RVZlWk8KMnJBMDBPOGVjdWN3NTR1THZENjRHbENCNmhuZDVlcFJoSWZwTjhLQWM5U2xKSmhEbGNkcEJDK0t3RGRBM0NONApWTVphYlM4TWU3ekFhdGZhRTByQWFPalUxQ01vdFc1allMREM5OWpnSnUxV3IwbVJUc21kalNnbGQ3WjgyR0dxCldocFJ3Q0dpcUw0ais0dktySTJUaFpiSkxsczVZUGtFZ3R6eVdXcE9hMS8zaG1nU0k1MTlRMDJBb25qR2ZNR3QKUUJCaWdzRUNnWUVBODdNd2VQV2d2RVlUYno4TnZBeEZ5RkhuQ2NaMFJzQWFOVUw1R3d5YS9YU08vQng0OTFFZApaQ3c0VEFCZGlCbHIvOEdxb2liWXBFcGFvcEUyK0NHT3RxUzBvK3BSWkZXVXRsaFZRYzFhL2d6WmhQWHlmeWFECnFJYUNUZ3dyT2ZidnVhelk1bFd2Z1dhWWtnb0gwUkxKVGprd3Q2b3FJdDFNMERYS1hEcnpwZE1DZ1lFQXlMNkMKR0tLb216MTVRNkJFRStuWCs3M0VtMGlxNEdLYWpKU2RwRVZacHlNbnBYS240OFZBcmlwR2UrZEttOElSenZ2bApsNUQyQTN4d1E4TTNQUmZFdkpjNkNTVXhuWXVaNEV6MWsraVFpdWVMaWM5TjgxbCs4MmVLa1d3aDVnYW1JRUFuCm5VMEZKRXJxdktHUVdXbEVWcldNTW1VWVdwcDcvWHRsVVVaOG9DRUNnWUVBaTU1dXQrNHB6NVBxVUlMMGNIY3IKaDYvOHlPbnM5aGZiTEFhWnh6aDZsNWt1emh2VjVnT1A3ak16Y2IrSDFwQ1NBbTVIUHkwNFV5L1NLMjg4NmYzMwowSVllaEFhYjZQcnEvMmt1TjB2YXhOQkIwdDVCdHowdWt0KzFTZGZJOENXY2hHa1Z2eWo2S3czSGZXdkh2SzJoCnJYSXdpaGt3bU5ibXlpYjNMODRLaDBjQ2dZRUF0SWNteGZMWndDb0xlTGFUSW5sa285N29CV0hYVWMwN0FYdlIKUE42bEhucXQ5OHJoa3lOYjVJVGVPQ1VyWW1HbjFFV1NGcmpsbFFMK2p1SHJOa1MreDM4VVVROGl6SFN6NEJRMQpzVnN2U2N1cklEYk8raTZjelZack5oWlJjZVMrMXpmNnFDcVFtaS9KWS9QRHRiVEdJVmhKQ1RVRExzL0krNDlSCjhVSjdaeUVDZ1lFQXc0WGYxdkZrOVZoRHNFOW5CSVFhUGZPc09BZWRKSFM3YVcxNk5ncEpyYmg0VjdRYmNTQisKRWVqV0xGT0FaeHNXTGlGRlo3aXhONXdBMmxMS0t1VVVSV0VPYkx3dzk0eUJJTzVGemE1b2g5V3g1blA4bmwyWApmcFl6VjNwMXB6N3lZaW1PUVBkcjZ6ekFkQnlDYlN1UzJlRkNFUkxERUhWZG1BbUt1UVFRU0QwPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+            token: cc811c88-acee-11e7-b811-08002752d29d
+        - name: fellowship-basic-auth
+          user:
+            as-user-extra: {}
+            password: cc811c88-acee-11e7-b811-08002752d29d
+            username: admin
+
+  wordpress_password:
+    default: admin
+
+  mysql_password:
+    default: admin
+
+node_types:
+
+  cloudify.kubernetes.resources.PersistentVolumeClaim:
+    derived_from: cloudify.kubernetes.resources.Main
+    properties:
+      _api_mapping:
+        default:
+          create:
+            api: CoreV1Api
+            method: create_namespaced_persistent_volume_claim
+            payload: V1PersistentVolumeClaim
+          read:
+            api: CoreV1Api
+            method: read_namespaced_persistent_volume_claim
+          delete:
+            api: CoreV1Api
+            method: delete_namespaced_persistent_volume_claim
+            payload: V1DeleteOptions
+
+node_templates:
+
+  wordpress_deploy:
+    type: cloudify.kubernetes.resources.Deployment
+    properties:
+      definition:
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: wordpress
+          labels:
+            app: wordpress
+        spec:
+          revisionHistoryLimit: 0
+          strategy:
+            type: Recreate
+          template:
+            metadata:
+              labels:
+                app: wordpress
+                tier: frontend
+            spec:
+              containers:
+              - image: wordpress:4.8.0-apache
+                name: wordpress
+                env:
+                - name: WORDPRESS_DB_HOST
+                  value: wordpress-mysql
+                - name: WORDPRESS_DB_PASSWORD
+                  value: { get_input: wordpress_password }
+                ports:
+                - containerPort: 80
+                  name: wordpress
+                volumeMounts:
+                - name: wordpress-persistent-storage
+                  mountPath: /var/www/html
+              volumes:
+              - name: wordpress-persistent-storage
+                persistentVolumeClaim:
+                  claimName: wp-pv-claim
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: mysql_pv_claim
+
+  wordpress_svc:
+    type: cloudify.kubernetes.resources.Service
+    properties:
+      definition:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: wordpress
+          labels:
+            app: wordpress
+        spec:
+          ports:
+            - port: 80
+          selector:
+            app: wordpress
+            tier: frontend
+            type: NodePort
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: mysql_pv_claim
+
+  wp_pv_claim:
+    type: cloudify.kubernetes.resources.PersistentVolumeClaim
+    properties:
+      definition:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: wp-pv-claim
+          labels:
+            app: wordpress
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: wordpress_mysql_deploy
+      - type: cloudify.relationships.depends_on
+        target: wordpress_mysql_svc
+
+  wordpress_mysql_deploy:
+    type: cloudify.kubernetes.resources.Deployment
+    properties:
+      definition:
+        apiVersion: extensions/v1beta1
+        kind: Deployment
+        metadata:
+          name: wordpress-mysql
+          labels:
+            app: wordpress
+        spec:
+          revisionHistoryLimit: 0
+          strategy:
+            type: Recreate
+          template:
+            metadata:
+              labels:
+                app: wordpress
+                tier: mysql
+            spec:
+              containers:
+              - image: mysql:5.6
+                name: mysql
+                env:
+                  # $ kubectl create secret generic mysql-pass --from-file=password.txt
+                  # make sure password.txt does not have a trailing newline
+                - name: MYSQL_ROOT_PASSWORD
+                  value: { get_input: mysql_password }
+                ports:
+                - containerPort: 3306
+                  name: mysql
+                volumeMounts:
+                - name: mysql-persistent-storage
+                  mountPath: /var/lib/mysql
+              volumes:
+              - name: mysql-persistent-storage
+                persistentVolumeClaim:
+                  claimName: mysql-pv-claim
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: mysql_pv_claim
+
+  wordpress_mysql_svc:
+    type: cloudify.kubernetes.resources.Service
+    properties:
+      definition:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: wordpress-mysql
+          labels:
+            app: wordpress
+        spec:
+          ports:
+            - port: 3306
+          selector:
+            app: wordpress
+            tier: mysql
+          clusterIP: None
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: mysql_pv_claim
+
+  mysql_pv_claim:
+    type: cloudify.kubernetes.resources.PersistentVolumeClaim
+    properties:
+      definition:
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: mysql-pv-claim
+          labels:
+            app: wordpress
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+      - type: cloudify.relationships.depends_on
+        target: local_pv_2
+      - type: cloudify.relationships.depends_on
+        target: local_pv_1
+
+  local_pv_2:
+    type: cloudify.kubernetes.resources.PersistentVolume
+    properties:
+      definition:
+        apiVersion: v1
+        kind: PersistentVolume
+        metadata:
+          name: local-pv-2
+          labels:
+            type: local
+        spec:
+          capacity:
+            storage: 20Gi
+          accessModes:
+            - ReadWriteOnce
+          hostPath:
+            path: /tmp/data/pv-2
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+
+  local_pv_1:
+    type: cloudify.kubernetes.resources.PersistentVolume
+    properties:
+      definition:
+        apiVersion: v1
+        kind: PersistentVolume
+        metadata:
+          name: local-pv-1
+          labels:
+            type: local
+        spec:
+          capacity:
+            storage: 20Gi
+          accessModes:
+            - ReadWriteOnce
+          hostPath:
+            path: /tmp/data/pv-1
+    relationships:
+      - type: cloudify.kubernetes.relationships.managed_by_master
+        target: kubernetes_federation
+
+  kubernetes_federation:
+    type: cloudify.kubernetes.nodes.Federation
+    properties:
+      configuration:
+        file_content: { get_input: kubernetes_federation_configuration }
